@@ -4,20 +4,62 @@
 //
 //  Created by macbook on 01/08/25.
 //
+
 import SwiftUI
 import Combine
 import Foundation
+
+struct GradientBackground<Content: View>: View {
+    let content: Content
+    
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+    
+    var body: some View {
+        ZStack {
+            LinearGradient(
+                colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.8)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .edgesIgnoringSafeArea(.all)
+            
+            content
+        }
+    }
+}
+
+// StyledField.swift
+struct StyledField: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .padding()
+            .background(Color.white.opacity(0.15))
+            .foregroundColor(.white)
+            .cornerRadius(10)
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.3)))
+    }
+}
+
+extension View {
+    func styledField() -> some View {
+        self.modifier(StyledField())
+    }
+}
 
 struct MainTabView: View {
     @EnvironmentObject var authManager: AuthenticationManager
     
     var body: some View {
         TabView {
-            PermitListView()
-                .tabItem {
-                    Image(systemName: "list.clipboard")
-                    Text("Permits")
-                }
+            NavigationStack {
+                PermitListView()
+            }
+            .tabItem {
+                Image(systemName: "list.clipboard")
+                Text("Permits")
+            }
             
             CreatePermitView()
                 .tabItem {
@@ -37,6 +79,7 @@ struct MainTabView: View {
                     Text("Profile")
                 }
         }
+        
     }
 }
 
@@ -47,22 +90,21 @@ struct PermitListView: View {
     @State private var showingEditView = false
     
     var body: some View {
-        NavigationView {
+        GradientBackground {
             VStack(spacing: 0) {
-                // Search and Filter Bar
                 VStack(spacing: 12) {
                     HStack(spacing: 8) {
                         Image(systemName: "magnifyingglass")
-                            .foregroundColor(.secondary)
-                            .font(.system(size: 16)) // Smaller icon
+                            .foregroundColor(.white)
+                            .font(.system(size: 16))
                         TextField("Search permits...", text: $permitManager.searchText)
-                            .font(.system(size: 14)) // Smaller text
-                            .textFieldStyle(PlainTextFieldStyle())
+                            .font(.system(size: 14))
+                            .foregroundColor(.white)
+                            .padding(.vertical, 6)
                     }
                     .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Color(.systemGray6))
-                    .cornerRadius(8)
+                    .background(Color.white.opacity(0.2))
+                    .cornerRadius(10)
                     
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
@@ -87,54 +129,45 @@ struct PermitListView: View {
                     }
                 }
                 .padding()
-                .background(Color(.systemBackground))
                 
-                // Permits List
                 if permitManager.isLoading {
                     ProgressView("Loading...")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .foregroundColor(.white)
                 } else if permitManager.filteredPermits.isEmpty {
                     VStack(spacing: 20) {
                         Image(systemName: "doc.text.magnifyingglass")
                             .font(.system(size: 60))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.white)
                         Text("No permits found")
                             .font(.headline)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.white)
                         Text("Try adjusting your search or filters")
                             .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.white.opacity(0.9))
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    List {
-                        ForEach(permitManager.filteredPermits) { permit in
-                            PermitRowView(permit: permit) {
-                                selectedPermit = permit
-                                showingEditView = true
-                            }
-                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                Button("Delete", role: .destructive) {
-                                    permitManager.deletePermit(permit)
-                                }
-                                
-                                Button("Edit") {
+                    ScrollView {
+                        VStack(spacing: 16) {
+                            ForEach(permitManager.filteredPermits) { permit in
+                                PermitRowView(permit: permit) {
                                     selectedPermit = permit
                                     showingEditView = true
                                 }
-                                .tint(.blue)
                             }
                         }
+                        .padding()
                     }
-                    .listStyle(PlainListStyle())
                 }
             }
             .navigationTitle("Site Inspectors")
-            .navigationBarTitleDisplayMode(.automatic)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showingCreateView = true }) {
                         Image(systemName: "plus")
+                            .foregroundColor(.white)
                     }
                 }
             }
@@ -190,6 +223,7 @@ struct PermitRowView: View {
                     Text(permit.permitNumber)
                         .font(.headline)
                         .fontWeight(.semibold)
+                        .foregroundColor(.white)
                     
                     Spacer()
                     
@@ -198,8 +232,8 @@ struct PermitRowView: View {
                         .fontWeight(.medium)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
-                        .background(permit.status.color.opacity(0.2))
-                        .foregroundColor(permit.status.color)
+                        .background(permit.status.color.opacity(0.3))
+                        .foregroundColor(.white)
                         .cornerRadius(8)
                 }
                 
@@ -208,9 +242,10 @@ struct PermitRowView: View {
                         Text(permit.visitorName)
                             .font(.subheadline)
                             .fontWeight(.medium)
+                            .foregroundColor(.white)
                         Text(permit.company)
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.white.opacity(0.85))
                     }
                     
                     Spacer()
@@ -218,26 +253,27 @@ struct PermitRowView: View {
                     VStack(alignment: .trailing, spacing: 2) {
                         Text(permit.entryDate, style: .date)
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.white.opacity(0.85))
                         Text(permit.entryDate, style: .time)
                             .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.white.opacity(0.8))
                     }
                 }
                 
                 Text(permit.purpose)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.white.opacity(0.9))
                     .lineLimit(2)
             }
             .padding()
-            .background(Color(.systemBackground))
+            .background(Color.white.opacity(0.15))
             .cornerRadius(12)
-            .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+            .shadow(color: .black.opacity(0.2), radius: 3, x: 0, y: 2)
         }
         .buttonStyle(PlainButtonStyle())
     }
 }
+
 
 // MARK: - Create Permit View
 struct CreatePermitView: View {
@@ -256,49 +292,57 @@ struct CreatePermitView: View {
     @State private var alertMessage = ""
     
     var body: some View {
-        NavigationView {
-            Form {
-                Section(header: Text("Permit Information")) {
-                    TextField("Permit Number", text: $permitNumber)
-                        .textInputAutocapitalization(.characters)
-                    
-                    TextField("Visitor Name", text: $visitorName)
-                        .textInputAutocapitalization(.words)
-                    
-                    TextField("Company", text: $company)
-                        .textInputAutocapitalization(.words)
-                }
-                
-                Section(header: Text("Visit Details")) {
-                    TextField("Purpose of Visit", text: $purpose, axis: .vertical)
-                        .lineLimit(3...6)
-                    
-                    DatePicker("Entry Date", selection: $entryDate, displayedComponents: [.date, .hourAndMinute])
-                    
-                    DatePicker("Exit Date", selection: $exitDate, displayedComponents: [.date, .hourAndMinute])
-                }
-                
-                Section(header: Text("Authorization")) {
-                    TextField("Authorized By", text: $authorizedBy)
-                        .textInputAutocapitalization(.words)
-                }
-            }
-            .navigationTitle("Create Permit")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
+        GradientBackground {
+            ScrollView {
+                VStack(spacing: 16) {
+                    Group {
+                        TextField("Permit Number", text: $permitNumber)
+                            .styledField()
+                        
+                        TextField("Visitor Name", text: $visitorName)
+                            .styledField()
+                        
+                        TextField("Company", text: $company)
+                            .styledField()
+                        
+                        TextField("Purpose of Visit", text: $purpose)
+                            .styledField()
                     }
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Create") {
+                    
+                    Group {
+                        DatePicker("Entry Date", selection: $entryDate, displayedComponents: [.date, .hourAndMinute])
+                            .datePickerStyle(.compact)
+                            .padding()
+                            .background(Color.white.opacity(0.15))
+                            .cornerRadius(10)
+                            .foregroundColor(.white)
+                        
+                        DatePicker("Exit Date", selection: $exitDate, displayedComponents: [.date, .hourAndMinute])
+                            .datePickerStyle(.compact)
+                            .padding()
+                            .background(Color.white.opacity(0.15))
+                            .cornerRadius(10)
+                            .foregroundColor(.white)
+                        
+                        TextField("Authorized By", text: $authorizedBy)
+                            .styledField()
+                    }
+                    
+                    Button("Create Permit") {
                         createPermit()
                     }
-                    .disabled(!isFormValid)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.white)
+                    .foregroundColor(.blue)
+                    .cornerRadius(12)
+                    .shadow(radius: 4)
+                    
+                    Spacer()
                 }
+                .padding()
             }
+            .navigationTitle("Create Permit")
             .alert("Create Permit", isPresented: $showingAlert) {
                 Button("OK") {
                     if alertMessage.contains("successfully") {
@@ -358,6 +402,7 @@ struct CreatePermitView: View {
         showingAlert = true
     }
 }
+
 
 // MARK: - Edit Permit View
 struct EditPermitView: View {
@@ -576,35 +621,39 @@ struct ProfileView: View {
     @EnvironmentObject var authManager: AuthenticationManager
     
     var body: some View {
-        NavigationView {
+        GradientBackground {
             VStack(spacing: 30) {
                 VStack(spacing: 20) {
                     Image(systemName: "person.circle.fill")
                         .font(.system(size: 100))
-                        .foregroundColor(.blue)
+                        .foregroundColor(.white)
                     
                     if let user = authManager.currentUser {
                         Text(user.username)
                             .font(.title2)
                             .fontWeight(.semibold)
+                            .foregroundColor(.white)
                         
                         Text(user.role.rawValue)
                             .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.white.opacity(0.8))
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
-                            .background(Color.blue.opacity(0.1))
+                            .background(Color.white.opacity(0.15))
                             .cornerRadius(8)
                     }
                 }
                 
-                VStack(spacing: 15) {
-                    Button("Logout") {
-                        authManager.logout()
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(.red)
+                Button("Logout") {
+                    authManager.logout()
                 }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.white)
+                .foregroundColor(.red)
+                .cornerRadius(12)
+                .padding(.horizontal)
+                .shadow(radius: 4)
                 
                 Spacer()
             }

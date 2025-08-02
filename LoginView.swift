@@ -4,6 +4,7 @@
 //
 //  Created by macbook on 01/08/25.
 //
+
 import SwiftUI
 import Combine
 import Foundation
@@ -12,80 +13,126 @@ struct LoginView: View {
     @EnvironmentObject var authManager: AuthenticationManager
     @State private var username = ""
     @State private var password = ""
-    @State private var showError = false
-    
+    @State private var isLoading = false
+
     var body: some View {
-        NavigationView {
+        ZStack {
+           
+            LinearGradient(
+                colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.8)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .edgesIgnoringSafeArea(.all)
+
             VStack(spacing: 30) {
-                VStack(spacing: 20) {
-                    Image(systemName: "shield.checkered")
-                        .font(.system(size: 80))
-                        .foregroundColor(.blue)
-                    
+                VStack(spacing: 10) {
+                    Image(systemName: "shield.lefthalf.filled")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 80, height: 80)
+                        .foregroundColor(.white)
+
                     Text("Site Inspector")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                    
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundColor(.white)
+
                     Text("Permit Management System")
-                        .font(.headline)
-                        .foregroundColor(.secondary)
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.8))
                 }
-                
-                VStack(spacing: 20) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Username")
-                            .font(.headline)
-                        TextField("Enter username", text: $username)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .textInputAutocapitalization(.never)
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Password")
-                            .font(.headline)
-                        SecureField("Enter password", text: $password)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                    }
-                    
-                    Button(action: login) {
-                        Text("Login")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.blue)
-                            .cornerRadius(10)
-                    }
-                    .disabled(username.isEmpty || password.isEmpty)
+
+                VStack(spacing: 18) {
+                    customInputField(icon: "person.fill", placeholder: "Username", text: $username, isSecure: false)
+                    customInputField(icon: "lock.fill", placeholder: "Password", text: $password, isSecure: true)
                 }
-                
-                VStack(alignment: .leading, spacing: 5) {
+
+                Button(action: login) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.white)
+                            .shadow(radius: 5)
+
+                        if isLoading {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: Color.blue))
+                                .padding()
+                        } else {
+                            Text("Login")
+                                .foregroundColor(.blue)
+                                .font(.headline)
+                                .padding()
+                        }
+                    }
+                    .frame(height: 50)
+                }
+                .padding(.top)
+
+                // Demo credentials
+                VStack(spacing: 4) {
                     Text("Demo Credentials:")
                         .font(.caption)
-                        .foregroundColor(.secondary)
-                    Text("Username: inspector1, supervisor1, or admin1")
+                        .foregroundColor(.white.opacity(0.7))
+
+                    Text("Username: steeladmin")
                         .font(.caption2)
-                        .foregroundColor(.secondary)
-                    Text("Password: demo123")
+                        .foregroundColor(.white.opacity(0.7))
+
+                    Text("Password: 123456")
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.white.opacity(0.7))
                 }
-                
+
                 Spacer()
             }
             .padding()
-            .navigationTitle("Login")
-            .alert("Login Failed", isPresented: $showError) {
-                Button("OK") { }
-            } message: {
-                Text("Invalid username or password")
+            .alert(isPresented: .constant(authManager.loginErrorMessage != nil)) {
+                Alert(
+                    title: Text("Login Failed"),
+                    message: Text(authManager.loginErrorMessage ?? "Unknown error"),
+                    dismissButton: .default(Text("OK"), action: {
+                        authManager.loginErrorMessage = nil
+                    })
+                )
+            }
+        }
+        .navigationBarHidden(true)
+    }
+
+    private func login() {
+        isLoading = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            authManager.login(username: username, password: password)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                isLoading = false
             }
         }
     }
-    
-    private func login() {
-        if !authManager.login(username: username, password: password) {
-            showError = true
+
+    // MARK: - Custom Input Field
+    @ViewBuilder
+    private func customInputField(icon: String, placeholder: String, text: Binding<String>, isSecure: Bool) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .foregroundColor(.white)
+                .frame(width: 24)
+
+            if isSecure {
+                SecureField(placeholder, text: text)
+                    .foregroundColor(.white)
+                    .textInputAutocapitalization(.never)
+            } else {
+                TextField(placeholder, text: text)
+                    .foregroundColor(.white)
+                    .textInputAutocapitalization(.never)
+            }
         }
+        .padding()
+        .background(Color.white.opacity(0.2))
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.white.opacity(0.3), lineWidth: 1)
+        )
     }
 }
