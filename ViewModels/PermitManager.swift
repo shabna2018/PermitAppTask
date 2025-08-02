@@ -8,7 +8,7 @@ import SwiftUI
 import Combine
 import Foundation
 
-class PermitManager: ObservableObject {
+class PermitViewModel: ObservableObject {
     @Published var permits: [Permit] = []
     @Published var isLoading = false
     @Published var errorMessage: String?

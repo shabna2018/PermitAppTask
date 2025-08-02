@@ -10,7 +10,7 @@ import Combine
 import Foundation
 
 struct LoginView: View {
-    @EnvironmentObject var authManager: AuthenticationManager
+    @EnvironmentObject var authViewModel: AuthenticationViewModel
     @State private var username = ""
     @State private var password = ""
     @State private var isLoading = false
@@ -86,12 +86,12 @@ struct LoginView: View {
                 Spacer()
             }
             .padding()
-            .alert(isPresented: .constant(authManager.loginErrorMessage != nil)) {
+            .alert(isPresented: .constant(authViewModel.loginErrorMessage != nil)) {
                 Alert(
                     title: Text("Login Failed"),
-                    message: Text(authManager.loginErrorMessage ?? "Unknown error"),
+                    message: Text(authViewModel.loginErrorMessage ?? "Unknown error"),
                     dismissButton: .default(Text("OK"), action: {
-                        authManager.loginErrorMessage = nil
+                        authViewModel.loginErrorMessage = nil
                     })
                 )
             }
@@ -102,7 +102,7 @@ struct LoginView: View {
     private func login() {
         isLoading = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            authManager.login(username: username, password: password)
+            authViewModel.login(username: username, password: password)
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 isLoading = false
             }

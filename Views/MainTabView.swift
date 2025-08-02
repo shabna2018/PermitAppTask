@@ -49,7 +49,7 @@ extension View {
 }
 
 struct MainTabView: View {
-    @EnvironmentObject var authManager: AuthenticationManager
+    @EnvironmentObject var authViewModel: AuthenticationViewModel
     
     var body: some View {
         TabView {
@@ -84,7 +84,7 @@ struct MainTabView: View {
 }
 
 struct PermitListView: View {
-    @EnvironmentObject var permitManager: PermitManager
+    @EnvironmentObject var permitViewModel: PermitViewModel
     @State private var showingCreateView = false
     @State private var selectedPermit: Permit?
     @State private var showingEditView = false
@@ -97,7 +97,7 @@ struct PermitListView: View {
                         Image(systemName: "magnifyingglass")
                             .foregroundColor(.white)
                             .font(.system(size: 16))
-                        TextField("Search permits...", text: $permitManager.searchText)
+                        TextField("Search permits...", text: $permitViewModel.searchText)
                             .font(.system(size: 14))
                             .foregroundColor(.white)
                             .padding(.vertical, 6)
@@ -110,18 +110,18 @@ struct PermitListView: View {
                         HStack(spacing: 12) {
                             FilterChip(
                                 title: "All",
-                                isSelected: permitManager.selectedStatus == nil
+                                isSelected: permitViewModel.selectedStatus == nil
                             ) {
-                                permitManager.selectedStatus = nil
+                                permitViewModel.selectedStatus = nil
                             }
                             
                             ForEach(Permit.PermitStatus.allCases, id: \.self) { status in
                                 FilterChip(
                                     title: status.rawValue,
-                                    isSelected: permitManager.selectedStatus == status,
+                                    isSelected: permitViewModel.selectedStatus == status,
                                     color: status.color
                                 ) {
-                                    permitManager.selectedStatus = status
+                                    permitViewModel.selectedStatus = status
                                 }
                             }
                         }
@@ -130,11 +130,11 @@ struct PermitListView: View {
                 }
                 .padding()
                 
-                if permitManager.isLoading {
+                if permitViewModel.isLoading {
                     ProgressView("Loading...")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .foregroundColor(.white)
-                } else if permitManager.filteredPermits.isEmpty {
+                } else if permitViewModel.filteredPermits.isEmpty {
                     VStack(spacing: 20) {
                         Image(systemName: "doc.text.magnifyingglass")
                             .font(.system(size: 60))
@@ -150,7 +150,7 @@ struct PermitListView: View {
                 } else {
                     ScrollView {
                         VStack(spacing: 16) {
-                            ForEach(permitManager.filteredPermits) { permit in
+                            ForEach(permitViewModel.filteredPermits) { permit in
                                 PermitRowView(permit: permit) {
                                     selectedPermit = permit
                                     showingEditView = true
@@ -277,8 +277,8 @@ struct PermitRowView: View {
 
 // MARK: - Create Permit View
 struct CreatePermitView: View {
-    @EnvironmentObject var permitManager: PermitManager
-    @EnvironmentObject var authManager: AuthenticationManager
+    @EnvironmentObject var permitViewModel: PermitViewModel
+    @EnvironmentObject var authViewModel: AuthenticationViewModel
     @Environment(\.dismiss) private var dismiss
     
     @State private var permitNumber = ""
@@ -355,7 +355,7 @@ struct CreatePermitView: View {
         }
         .onAppear {
             permitNumber = generatePermitNumber()
-            authorizedBy = authManager.currentUser?.username ?? ""
+            authorizedBy = authViewModel.currentUser?.username ?? ""
         }
     }
     
@@ -391,12 +391,12 @@ struct CreatePermitView: View {
             entryDate: entryDate,
             exitDate: exitDate,
             status: .pending,
-            createdBy: authManager.currentUser?.username ?? "",
+            createdBy: authViewModel.currentUser?.username ?? "",
             createdAt: Date(),
             authorizedBy: authorizedBy
         )
         
-        permitManager.createPermit(newPermit)
+        permitViewModel.createPermit(newPermit)
         
         alertMessage = "Permit created successfully!"
         showingAlert = true
@@ -406,7 +406,7 @@ struct CreatePermitView: View {
 
 // MARK: - Edit Permit View
 struct EditPermitView: View {
-    @EnvironmentObject var permitManager: PermitManager
+    @EnvironmentObject var permitViewModel: PermitViewModel
     @Environment(\.dismiss) private var dismiss
     
     let permit: Permit
@@ -527,7 +527,7 @@ struct EditPermitView: View {
             authorizedBy: authorizedBy
         )
         
-        permitManager.updatePermit(updatedPermit)
+        permitViewModel.updatePermit(updatedPermit)
         
         alertMessage = "Permit updated successfully!"
         showingAlert = true
@@ -536,41 +536,41 @@ struct EditPermitView: View {
 
 // MARK: - Bluetooth View
 struct BluetoothView: View {
-    @EnvironmentObject var bluetoothManager: BluetoothManager
-    @EnvironmentObject var permitManager: PermitManager
+    @EnvironmentObject var bluetoothViewModel: BluetoothViewModel
+    @EnvironmentObject var permitManager: PermitViewModel
     
     var body: some View {
         NavigationView {
             VStack(spacing: 30) {
                 VStack(spacing: 20) {
-                    Image(systemName: bluetoothManager.isConnected ? "antenna.radiowaves.left.and.right" : "antenna.radiowaves.left.and.right.slash")
+                    Image(systemName: bluetoothViewModel.isConnected ? "antenna.radiowaves.left.and.right" : "antenna.radiowaves.left.and.right.slash")
                         .font(.system(size: 80))
-                        .foregroundColor(bluetoothManager.isConnected ? .blue : .gray)
+                        .foregroundColor(bluetoothViewModel.isConnected ? .blue : .gray)
                     
-                    Text(bluetoothManager.deviceName)
+                    Text(bluetoothViewModel.deviceName)
                         .font(.title2)
                         .fontWeight(.semibold)
                     
-                    Text(bluetoothManager.connectionStatus)
+                    Text(bluetoothViewModel.connectionStatus)
                         .font(.subheadline)
-                        .foregroundColor(bluetoothManager.isConnected ? .green : .secondary)
+                        .foregroundColor(bluetoothViewModel.isConnected ? .green : .secondary)
                 }
                 
                 VStack(spacing: 15) {
-                    if bluetoothManager.isConnected {
+                    if bluetoothViewModel.isConnected {
                         Button("Disconnect Device") {
-                            bluetoothManager.disconnectDevice()
+                            bluetoothViewModel.disconnectDevice()
                         }
                         .buttonStyle(.bordered)
                         .tint(.red)
                     } else {
                         Button("Connect to Gate Device") {
-                            bluetoothManager.connectToDevice()
+                            bluetoothViewModel.connectToDevice()
                         }
                         .buttonStyle(.borderedProminent)
                     }
                     
-                    if bluetoothManager.isConnected {
+                    if bluetoothViewModel.isConnected {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Active Permits")
                                 .font(.headline)
@@ -593,7 +593,7 @@ struct BluetoothView: View {
                                         Spacer()
                                         
                                         Button("Send to Gate") {
-                                            _ = bluetoothManager.sendPermitToGate(permit)
+                                            _ = bluetoothViewModel.sendPermitToGate(permit)
                                         }
                                         .buttonStyle(.bordered)
                                         .font(.caption)
@@ -618,7 +618,7 @@ struct BluetoothView: View {
 
 // MARK: - Profile View
 struct ProfileView: View {
-    @EnvironmentObject var authManager: AuthenticationManager
+    @EnvironmentObject var authManager: AuthenticationViewModel
     
     var body: some View {
         GradientBackground {

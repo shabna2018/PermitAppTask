@@ -8,7 +8,7 @@ import SwiftUI
 import Combine
 import Foundation
 
-class BluetoothManager: ObservableObject {
+class BluetoothViewModel: ObservableObject {
     @Published var isConnected = false
     @Published var deviceName = "Gate Device BT-001"
     @Published var connectionStatus = "Disconnected"

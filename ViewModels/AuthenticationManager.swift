@@ -10,7 +10,7 @@ import Combine
 import Foundation
 import KeychainAccess
 
-class AuthenticationManager: ObservableObject {
+class AuthenticationViewModel: ObservableObject {
     @Published var currentUser: User?
     @Published var isAuthenticated = false
     @Published var loginErrorMessage: String?
